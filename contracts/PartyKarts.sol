@@ -4,8 +4,6 @@ pragma experimental ABIEncoderV2;
 
 import "@thirdweb-dev/contracts/base/ERC721Drop.sol";
 
-// TODO - onlyApi function to mark a race as completed by ID - could be used for consensus mechansims too
-
 contract PartyKarts is ERC721Drop {
     event AllRacersCompletedEvent(string raceId);
     event RaceCompletedEvent(string raceId);
@@ -39,10 +37,13 @@ contract PartyKarts is ERC721Drop {
     mapping(address => mapping(address => RaceResult)) raceResults;
 
     mapping(string => RaceLobby) public raceLobbies;
+    address public tokenAddress;
+    IERC20 token;
 
     constructor(
         string memory _name,
         string memory _symbol,
+        address _tokenAddress,
         address _royaltyRecipient,
         uint128 _royaltyBps,
         address _primarySaleRecipient
@@ -55,7 +56,13 @@ contract PartyKarts is ERC721Drop {
             _primarySaleRecipient
         )
     {
+        tokenAddress = _tokenAddress;
+        token = IERC20(tokenAddress);
         emit OwnerUpdated(address(0), msg.sender);
+    }
+
+    function setTokenAddress(address newAddress) public onlyOwner {
+        tokenAddress = newAddress;
     }
 
     function renounceOwnership() public onlyOwner {
@@ -87,8 +94,7 @@ contract PartyKarts is ERC721Drop {
         require(found, "You are not part of this race lobby");
 
         // Return entry fee to player
-        (bool success, ) = msg.sender.call{value: entryFee}("");
-        require(success, "Failed to send entry fee back to player");
+        token.transfer(msg.sender, entryFee);
     }
 
     function collectRaceRewards(
@@ -126,12 +132,14 @@ contract PartyKarts is ERC721Drop {
             emit AllRacersCompletedEvent(_raceId);
         }
 
+        require(
+            raceLobby.rewardsPool >= _amount,
+            "Not enough rewards available"
+        );
+
         raceLobby.rewardsPool -= _amount;
 
-        require(raceLobby.rewardsPool >= 0, "Not enough rewards available");
-
-        (bool success, ) = msg.sender.call{value: _amount}("");
-        require(success, "Withdrawal failed.");
+        require(token.transfer(msg.sender, _amount), "Transfer failed");
     }
 
     function joinRaceLobby(string memory _raceID) external payable {
@@ -151,15 +159,22 @@ contract PartyKarts is ERC721Drop {
             );
         }
 
-        require(msg.value == raceLobby.entryFee, "Incorrect entry fee");
+        require(
+            token.balanceOf(msg.sender) >= raceLobby.entryFee,
+            "Not enough tokens to enter race"
+        );
 
+        require(
+            token.transferFrom(msg.sender, address(this), raceLobby.entryFee),
+            "Race fee payment failed"
+        );
+
+        raceLobby.rewardsPool += raceLobby.entryFee;
         joinedPlayers.push(msg.sender);
-
-        raceLobby.rewardsPool += msg.value;
     }
 
-    function getContractBalance() public view returns (uint256) {
-        return address(this).balance;
+    function getContractTokenBalance() public view returns (uint256) {
+        return token.balanceOf(address(this));
     }
 
     function createRaceLobby(
@@ -197,7 +212,12 @@ contract PartyKarts is ERC721Drop {
     }
 
     function withdrawAll() external onlyOwner {
-        (bool success, ) = msg.sender.call{value: address(this).balance}("");
-        require(success, "Withdrawal failed.");
+        uint256 tokenBalance = token.balanceOf(address(this));
+        require(tokenBalance > 0, "No tokens to withdraw.");
+
+        require(
+            IERC20(tokenAddress).transfer(msg.sender, tokenBalance),
+            "Transfer failed."
+        );
     }
 }

@@ -12,10 +12,18 @@ module.exports = {
     polygon: {
       url: secrets.maticUrl,
       accounts: [secrets.privateKey],
+    },
+    arbitrum: {
+      url: secrets.arbitrumUrl,
+      accounts: [secrets.privateKey],
+    },
+    bsc: {
+      url: secrets.bscUrl,
+      accounts: [secrets.privateKey],
     }
   },
   etherscan: {
-    apiKey: secrets.polygonscanKey,
+    apiKey: secrets.bscScanKey,
   },
   solidity: {
     compilers: [

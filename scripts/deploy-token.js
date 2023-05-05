@@ -7,20 +7,22 @@
 const hre = require("hardhat");
 
 async function main() {
-  const PartyKarts = await hre.ethers.getContractFactory("PartyKarts");
-  const paryKarts = await PartyKarts.deploy(
-    "PartyKarts",
-    "KARTS",
-    "0xCf01ba6Aa133e291cBd61066d2De876474ebc4D9", //token address
-    "0x4158cC33e78541Cf21aEB08B3a9FD062fdF0C686",
-    100,
-    "0x4158cC33e78541Cf21aEB08B3a9FD062fdF0C686"
+  const PartyKartsToken = await hre.ethers.getContractFactory("PartyKartsToken");
+  const paryKartsToken = await PartyKartsToken.deploy(
+    "0x4158cC33e78541Cf21aEB08B3a9FD062fdF0C686", //token owner
+    "TestContract", //token name
+    "TEST", //token symbol
+    18, //decimals
+    ethers.BigNumber.from("1000000000000000000000000000000"), //total supply
+    1, // max txn % of supply
+    3, // max wallet size as % of supply
+    "0x4158cC33e78541Cf21aEB08B3a9FD062fdF0C686", // developer / marketing wallet
   );
 
-  await paryKarts.deployed();
+  await paryKartsToken.deployed();
 
   console.log(
-    `Deployed new contract to ${paryKarts.address}`
+    `Deployed new contract to ${paryKartsToken.address}`
   );
 }
 
