@@ -16,10 +16,14 @@ module.exports = {
     arbitrum: {
       url: secrets.arbitrumUrl,
       accounts: [secrets.privateKey],
+    },
+    bsc: {
+      url: secrets.bscUrl,
+      accounts: [secrets.privateKey],
     }
   },
   etherscan: {
-    apiKey: secrets.arbiscanKey,
+    apiKey: secrets.bscScanKey,
   },
   solidity: {
     compilers: [

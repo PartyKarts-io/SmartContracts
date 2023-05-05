@@ -4,8 +4,6 @@ pragma experimental ABIEncoderV2;
 
 import "@thirdweb-dev/contracts/base/ERC721Drop.sol";
 
-// TODO - onlyApi function to mark a race as completed by ID - could be used for consensus mechansims too
-
 contract PartyKarts is ERC721Drop {
     event AllRacersCompletedEvent(string raceId);
     event RaceCompletedEvent(string raceId);
