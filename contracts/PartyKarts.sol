@@ -166,7 +166,10 @@ contract PartyKarts is ERC721Drop {
 
         uint256 beforeBalance = token.balanceOf(address(this));
 
-        token.transferFrom(msg.sender, address(this), raceLobby.entryFee);
+        require(
+            token.transferFrom(msg.sender, address(this), raceLobby.entryFee),
+            "Race fee payment failed"
+        );
 
         require(
             token.balanceOf(address(this)) ==
