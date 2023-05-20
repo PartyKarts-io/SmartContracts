@@ -8,19 +8,19 @@ const hre = require("hardhat");
 
 async function main() {
   const PartyKarts = await hre.ethers.getContractFactory("PartyKarts");
-  const paryKarts = await PartyKarts.deploy(
-    "PartyKarts",
-    "KARTS",
+  const partyKarts = await PartyKarts.deploy(
+    "PartyKartsRaceContract",
+    "PartyKartsRaceContract",
     "0xA5E60D30daa7225F5140F7601E08f57325465255", //token address
     "0x4158cC33e78541Cf21aEB08B3a9FD062fdF0C686",
     100,
     "0x4158cC33e78541Cf21aEB08B3a9FD062fdF0C686"
   );
 
-  await paryKarts.deployed();
+  await partyKarts.deployed();
 
   console.log(
-    `Deployed new contract to ${paryKarts.address}`
+    `Deployed new contract to ${partyKarts.address}`
   );
 }
 
