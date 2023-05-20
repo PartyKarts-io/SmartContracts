@@ -30,6 +30,7 @@ contract PartyKarts is ERC721Drop {
         bool isOpen;
     }
 
+    uint256 public contractCollectableTokens;
     mapping(address => uint256) pendingRewards;
     mapping(string => bool) raceIDExists;
     // Consensus Mechanism:
@@ -37,6 +38,13 @@ contract PartyKarts is ERC721Drop {
     mapping(address => mapping(address => RaceResult)) raceResults;
 
     mapping(string => RaceLobby) public raceLobbies;
+    uint256 public raceLobbiesCreated;
+    uint256 public racesCompleted;
+    uint256 public totalPlayerRewardsCollected;
+    uint256 public totalLifetimeWagers;
+    mapping(address => uint256) public lifetimeWagersByPlayer;
+    mapping(address => uint256) public lifetimeRewardsCollectedByPlayer;
+    mapping(address => uint256) public lifetimeRacesByPlayer;
     address public tokenAddress;
     IERC20 token;
 
@@ -122,6 +130,7 @@ contract PartyKarts is ERC721Drop {
             raceLobby.isFinished = true;
             raceLobby.isStarted = true;
             emit RaceCompletedEvent(_raceId);
+            racesCompleted++;
         }
 
         raceLobby.rewardsCollected.push(msg.sender);
@@ -130,6 +139,9 @@ contract PartyKarts is ERC721Drop {
             raceLobby.rewardsCollected.length == raceLobby.joinedPlayers.length
         ) {
             emit AllRacersCompletedEvent(_raceId);
+            uint256 feeAmount = (raceLobby.entryFee *
+                raceLobby.joinedPlayers.length) / 20; // Calculate 5% of the pool
+            contractCollectableTokens += feeAmount;
         }
 
         require(
@@ -138,7 +150,9 @@ contract PartyKarts is ERC721Drop {
         );
 
         raceLobby.rewardsPool -= _amount;
-
+        lifetimeRewardsCollectedByPlayer[msg.sender] += _amount;
+        totalPlayerRewardsCollected += _amount;
+        lifetimeRacesByPlayer[msg.sender]++;
         require(token.transfer(msg.sender, _amount), "Transfer failed");
     }
 
@@ -170,10 +184,13 @@ contract PartyKarts is ERC721Drop {
         );
 
         raceLobby.rewardsPool += raceLobby.entryFee;
+        totalLifetimeWagers += raceLobby.entryFee;
+        lifetimeWagersByPlayer[msg.sender] += raceLobby.entryFee;
+        lifetimeRacesByPlayer[msg.sender]++;
         joinedPlayers.push(msg.sender);
     }
 
-    function getContractTokenBalance() public view returns (uint256) {
+    function getTotalPooledKart() public view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
@@ -207,16 +224,18 @@ contract PartyKarts is ERC721Drop {
 
         raceLobbies[_raceID] = newRaceLobby;
         raceIDExists[_raceID] = true;
-
+        raceLobbiesCreated++;
         return newRaceLobby;
     }
 
     function withdrawAll() external onlyOwner {
-        uint256 tokenBalance = token.balanceOf(address(this));
-        require(tokenBalance > 0, "No tokens to withdraw.");
+        require(contractCollectableTokens > 0, "No tokens to withdraw.");
 
         require(
-            IERC20(tokenAddress).transfer(msg.sender, tokenBalance),
+            IERC20(tokenAddress).transfer(
+                msg.sender,
+                contractCollectableTokens
+            ),
             "Transfer failed."
         );
     }
